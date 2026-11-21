@@ -7,7 +7,7 @@
 window.TOSSDRIVE_CONFIG = {
   // 【必填】Google Cloud Console 建立的「OAuth 用戶端 ID」（網頁應用程式類型）
   // 長得像：1234567890-abcdefg.apps.googleusercontent.com
-  CLIENT_ID: 'YOUR_CLIENT_ID.apps.googleusercontent.com',
+  CLIENT_ID: '397727334325-gm3shv9du9roj02ef0oete6pmloj6mou.apps.googleusercontent.com',
 
   // 要求的 Google 權限。
   // drive.file：只能看到、修改「TossDrive 自己建立的檔案」，看不到你 Drive 裡其他東西（最安全）。
