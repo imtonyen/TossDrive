@@ -2,7 +2,20 @@
 import { CFG } from '../constants.js';
 import { auth, isGisLoaded } from '../auth.js';
 import { state } from '../state.js';
-import { $ } from '../utils/dom.js';
+import { $, h } from '../utils/dom.js';
+
+/**
+ * 被別的網站用 iframe 嵌入時（點擊劫持）：不啟動 App，只顯示「請直接開啟」。
+ * 所有畫面在 HTML 裡預設都是 hidden，所以 iframe 擋掉 JS 時也只會是一片空白。
+ */
+export function showFramedNotice() {
+  document.body.replaceChildren(
+    h('section', { class: 'login' },
+      h('div', { class: 'login-card' },
+        h('h1', { text: 'TossDrive' }),
+        h('p', { class: 'login-desc', text: '基於安全考量，TossDrive 不能嵌在其他網頁裡使用。' }),
+        h('a', { class: 'btn-primary', href: location.href, target: '_blank', rel: 'noopener noreferrer', text: '在新分頁開啟' }))));
+}
 
 export function showView(name) {
   $('login-view').hidden = name !== 'login';

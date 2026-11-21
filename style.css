@@ -104,6 +104,7 @@ a { color: var(--accent); }
 .tagline { margin: 0 0 18px; color: var(--muted); font-style: italic; }
 .login-desc { font-size: 14px; line-height: 1.7; color: var(--muted); margin: 0 0 22px; }
 .login-card .btn-primary { width: 100%; padding: 12px; font-size: 16px; }
+.login-card a.btn-primary { display: block; text-decoration: none; }
 .login-error { color: var(--danger); font-size: 14px; margin: 14px 0 0; line-height: 1.6; text-align: left; }
 
 /* ---------- 聊天室整體版面 ---------- */

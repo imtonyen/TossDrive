@@ -26,7 +26,9 @@ import { cancelAllUploads, hasUnfinishedUploads, removeUpload, retryUpload } fro
 import { bindUI } from './ui/events.js';
 import { openLightbox } from './ui/lightbox.js';
 import { configureRender, resetView, scheduleRender } from './ui/render.js';
-import { hideExpired, setDot, showExpired, showLoginError, showView, updateLoginButton } from './ui/status.js';
+import {
+  hideExpired, setDot, showExpired, showFramedNotice, showLoginError, showView, updateLoginButton,
+} from './ui/status.js';
 import { $, toast } from './utils/dom.js';
 import { sleep } from './utils/async.js';
 
@@ -97,6 +99,9 @@ function logout() {
 /* ---------- 啟動 ---------- */
 
 function init() {
+  // 防點擊劫持：GitHub Pages 不能設 X-Frame-Options，<meta> CSP 也不支援 frame-ancestors，只能在這裡擋
+  if (window.top !== window.self) { showFramedNotice(); return; }
+
   configureAuth({ onExpired, onTokenAcquired, onFailure });
   configureRender({
     onDownload: downloadMessage,
