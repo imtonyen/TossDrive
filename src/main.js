@@ -98,10 +98,21 @@ function logout() {
 
 /* ---------- 啟動 ---------- */
 
+/** 版號從 package.json 讀（發版時只要改那一個地方），讀不到就不顯示 */
+async function showVersion() {
+  try {
+    const res = await fetch('package.json', { cache: 'no-cache' });
+    const { version } = await res.json();
+    if (!version) return;
+    for (const el of document.querySelectorAll('.app-version')) { el.textContent = 'v' + version; el.hidden = false; }
+  } catch (e) { /* 離線或讀不到：不顯示 */ }
+}
+
 function init() {
   // 防點擊劫持：GitHub Pages 不能設 X-Frame-Options，<meta> CSP 也不支援 frame-ancestors，只能在這裡擋
   if (window.top !== window.self) { showFramedNotice(); return; }
 
+  showVersion();
   configureAuth({ onExpired, onTokenAcquired, onFailure });
   configureRender({
     onDownload: downloadMessage,
