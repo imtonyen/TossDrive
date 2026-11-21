@@ -58,6 +58,9 @@ a { color: var(--accent); }
   font-weight: 600;
 }
 .btn-small {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -65,15 +68,32 @@ a { color: var(--accent); }
   font-size: 13px;
 }
 .icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: 0;
+  color: var(--muted);
   font-size: 20px;
   line-height: 1;
-  padding: 6px;
+  padding: 7px;
   border-radius: 8px;
   text-decoration: none;
 }
-.icon-btn:hover { background: var(--surface-2); }
+.icon-btn:hover { background: var(--surface-2); color: var(--text); }
+
+/* ---------- 線條圖示（SVG，顏色跟著文字走） ---------- */
+.icon {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: -0.14em;
+}
 
 /* ---------- 登入畫面 ---------- */
 .login {
@@ -93,7 +113,8 @@ a { color: var(--accent); }
   text-align: center;
   box-shadow: var(--shadow);
 }
-.login-logo { font-size: 48px; }
+.login-logo { font-size: 48px; line-height: 1; color: var(--accent); }
+.login-logo .icon { display: block; margin: 0 auto; stroke-width: 1.6; }
 .login-card h1 { margin: 8px 0 2px; font-size: 28px; }
 .tagline { margin: 0 0 18px; color: var(--muted); font-style: italic; }
 .login-desc { font-size: 14px; line-height: 1.7; color: var(--muted); margin: 0 0 22px; }
@@ -203,7 +224,8 @@ a { color: var(--accent); }
   .bubble { max-width: 88%; }
 }
 
-.meta { font-size: 11px; color: var(--muted); margin-bottom: 4px; white-space: nowrap; }
+.meta { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); margin-bottom: 4px; white-space: nowrap; }
+.meta .icon { width: 12px; height: 12px; vertical-align: 0; }
 .text {
   white-space: pre-wrap;        /* 保留換行 */
   overflow-wrap: anywhere;      /* 長網址自動換行 */
@@ -215,6 +237,9 @@ a { color: var(--accent); }
 /* 訊息底下的小按鈕（複製、下載、刪除） */
 .actions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; justify-content: flex-end; }
 .act {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   background: none;
   border: 0;
   border-radius: 6px;
@@ -253,7 +278,8 @@ a { color: var(--accent); }
 
 /* 一般檔案卡片 */
 .file-card { display: flex; align-items: center; gap: 10px; min-width: 200px; }
-.file-icon { font-size: 30px; flex-shrink: 0; }
+.file-icon { font-size: 30px; line-height: 1; flex-shrink: 0; color: var(--accent); }
+.file-icon .icon { stroke-width: 1.5; }
 .file-info { min-width: 0; }
 .file-name { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
 .file-size { font-size: 12px; color: var(--muted); margin-top: 2px; }
@@ -293,7 +319,18 @@ a { color: var(--accent); }
   outline: none;
 }
 #text-input:focus { border-color: var(--accent); }
-.send-btn { padding: 10px 16px; }
+.send-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 19px;
+}
+.send-btn .icon { margin-left: -1px; }   /* 紙飛機視覺上偏右，微調置中 */
 
 /* ---------- 拖曳遮罩 ---------- */
 .drop-overlay {
@@ -307,7 +344,7 @@ a { color: var(--accent); }
   z-index: 20;
   pointer-events: none;
 }
-.drop-box { background: var(--surface); padding: 18px 26px; border-radius: 14px; font-size: 18px; box-shadow: 0 6px 24px rgba(0,0,0,.15); }
+.drop-box { display: inline-flex; align-items: center; gap: 10px; background: var(--surface); padding: 18px 26px; border-radius: 14px; font-size: 18px; box-shadow: 0 6px 24px rgba(0,0,0,.15); }
 
 /* ---------- 看大圖 ---------- */
 .lightbox {

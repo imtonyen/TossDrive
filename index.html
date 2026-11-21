@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="theme-color" content="#2f6fed">
   <title>TossDrive</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📤</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232f6fed' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><polyline points='17 8 12 3 7 8'/><line x1='12' y1='3' x2='12' y2='15'/></svg>">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,7 +14,7 @@
   <!-- ===================== 登入畫面 ===================== -->
   <section id="login-view" class="login" hidden>
     <div class="login-card">
-      <div class="login-logo">📤</div>
+      <div class="login-logo" data-icon="upload"></div>
       <h1>TossDrive</h1>
       <p class="tagline">Toss it here, find it there.</p>
       <p class="login-desc">
@@ -39,9 +39,9 @@
       <div class="topbar-right">
         <span id="sync-dot" class="sync-dot" title="同步狀態"></span>
         <span id="account-email" class="account-email"></span>
-        <button id="device-btn" class="icon-btn" title="切換這台裝置的標示（手機 / 電腦）">📱</button>
-        <a id="drive-link" class="icon-btn" target="_blank" rel="noopener" title="在 Google Drive 開啟 TossDrive 資料夾">📂</a>
-        <button id="logout-btn" class="icon-btn" title="登出這台裝置">⏻</button>
+        <button id="device-btn" class="icon-btn" title="切換這台裝置的標示（手機 / 電腦）" aria-label="切換裝置標示"></button>
+        <a id="drive-link" class="icon-btn" target="_blank" rel="noopener" title="在 Google Drive 開啟 TossDrive 資料夾" aria-label="開啟 Drive 資料夾" data-icon="folder"></a>
+        <button id="logout-btn" class="icon-btn" title="登出這台裝置" aria-label="登出" data-icon="power"></button>
       </div>
     </header>
 
@@ -63,10 +63,10 @@
 
     <!-- 下方輸入列 -->
     <footer class="composer">
-      <button id="attach-btn" class="icon-btn composer-btn" title="選擇檔案">📎</button>
-      <button id="camera-btn" class="icon-btn composer-btn" title="拍照">📷</button>
+      <button id="attach-btn" class="icon-btn composer-btn" title="選擇檔案" aria-label="選擇檔案" data-icon="paperclip"></button>
+      <button id="camera-btn" class="icon-btn composer-btn" title="拍照" aria-label="拍照" data-icon="camera"></button>
       <textarea id="text-input" rows="1" placeholder="輸入訊息…" autocomplete="off"></textarea>
-      <button id="send-btn" class="btn-primary send-btn">送出</button>
+      <button id="send-btn" class="btn-primary send-btn" title="送出" aria-label="送出" data-icon="send"></button>
       <!-- 隱藏的檔案選擇器 -->
       <input type="file" id="file-input" multiple hidden>
       <input type="file" id="camera-input" accept="image/*" capture="environment" hidden>
@@ -74,7 +74,7 @@
 
     <!-- 拖曳檔案時的提示遮罩（電腦） -->
     <div id="drop-overlay" class="drop-overlay" hidden>
-      <div class="drop-box">📥 放開即可上傳到 TossDrive</div>
+      <div class="drop-box"><span data-icon="download"></span>放開即可上傳到 TossDrive</div>
     </div>
   </section>
 
@@ -83,18 +83,16 @@
     <img id="lightbox-img" alt="">
     <div class="lightbox-bar">
       <span id="lightbox-name" class="lightbox-name"></span>
-      <button id="lightbox-download" class="btn-small">⬇ 下載</button>
-      <button id="lightbox-close" class="btn-small">✕ 關閉</button>
+      <button id="lightbox-download" class="btn-small" data-icon="download">下載</button>
+      <button id="lightbox-close" class="btn-small" data-icon="x">關閉</button>
     </div>
   </div>
 
   <!-- 小提示訊息 -->
   <div id="toast" class="toast" hidden></div>
 
-  <!-- 設定檔要在主程式之前載入 -->
+  <!-- 設定檔（一般腳本）要在主程式之前載入；主程式是 ES module，會自己載入 Google 登入元件 -->
   <script src="config.js"></script>
-  <script src="app.js"></script>
-  <!-- Google 登入元件（Google Identity Services），載入完成後通知主程式 -->
-  <script src="https://accounts.google.com/gsi/client" async defer onload="TossDrive.onGisLoaded()"></script>
+  <script type="module" src="src/main.js"></script>
 </body>
 </html>

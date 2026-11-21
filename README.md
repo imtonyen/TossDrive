@@ -156,12 +156,57 @@ Google 認不得目前的網址。回到「憑證」→ 你的用戶端 ID →�
 
 ---
 
-## 檔案說明
+## 專案結構
 
-| 檔案 | 內容 |
-| --- | --- |
-| `index.html` | 頁面結構（登入畫面、聊天室、大圖檢視） |
-| `style.css` | 樣式（響應式、深色模式） |
-| `config.js` | 設定 |
-| `app.js` | 登入、Drive 存取、同步、上傳、畫面渲染 |
-| `PLAN.md` | 開發計劃與決策紀錄 |
+純 JavaScript（原生 ES modules），**不需要打包或編譯**，改完存檔、重新整理就生效。
+
+```text
+TossDrive/
+├── index.html          頁面結構（登入畫面、聊天室、大圖檢視）
+├── style.css           樣式（響應式、深色模式、圖示）
+├── config.js           設定（Client ID 等），一般腳本，部署時只改這個
+├── package.json        專案資訊與常用指令（npm start / npm run check）
+└── src/
+    ├── main.js         進入點：把各模組接起來、登入流程、進出聊天室
+    ├── constants.js    設定合併與常數（上傳門檻、縮圖大小…）
+    ├── device.js       裝置資訊（手機 / 電腦、名稱、裝置 ID）
+    ├── state.js        共用資料（訊息、上傳中項目、快取）
+    ├── auth.js         登入（Google Identity Services）、憑證保存與過期
+    ├── drive.js        Drive API 共用呼叫、資料夾、垃圾桶
+    ├── messages.js     Drive 檔案 ↔ 訊息物件
+    ├── thumbs.js       縮圖下載與快取
+    ├── sync.js         首次載入、載入更早訊息、Changes 輪詢
+    ├── actions.js      下載、刪除
+    ├── cleanup.js      依保留天數自動清理
+    ├── upload/
+    │   ├── queue.js        上傳佇列、進度、取消與重試
+    │   ├── multipart.js    ≤ 5MB 一次上傳
+    │   ├── resumable.js    > 5MB 可續傳上傳
+    │   ├── thumbnail.js    用 canvas 產生縮圖
+    │   └── xhr.js          帶憑證的 XHR（取得上傳進度）
+    ├── ui/
+    │   ├── render.js       時間軸渲染、日期分隔線、捲動位置
+    │   ├── message-view.js 訊息元件（文字、圖片、檔案卡片、上傳中）
+    │   ├── lightbox.js     看大圖
+    │   ├── events.js       送出、選檔、拖曳、貼上、背景暫停…
+    │   ├── status.js       畫面切換、同步狀態燈、登入提示
+    │   └── icons.js        線條風格 SVG 圖示
+    └── utils/              dom、format、async、storage 小工具
+```
+
+模組之間的依賴是單向的（沒有循環）：需要「反過來通知」的地方，用回呼註冊（`configureAuth`、`configureRender`），例如登入模組不直接碰畫面。
+
+### 本機開發
+
+```bash
+npm start            # 等同 python3 -m http.server 8080，打開 http://localhost:8080
+npm run check        # 檢查 src/ 底下每個檔案的語法
+```
+
+> 要用 `http://localhost` 開，**不能直接雙擊 index.html**（瀏覽器不允許 `file://` 載入 ES modules，Google 登入也不接受）。
+
+### 發布流程
+
+- 平常的修改推到 `main`，**不會**更新線上網站。
+- GitHub Pages 的來源是 `release` 分支。本機測過沒問題，再把 `main` 合併到 `release` 並推送，網站才會更新，同時打版本 tag（`v1.1.0`…）。
+- 不要刪除 `release` 分支，否則 GitHub 會停用 Pages。

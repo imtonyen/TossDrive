@@ -1,0 +1,11 @@
+{
+  "name": "tossdrive",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Toss it here, find it there. 網頁版的「傳給自己的聊天室」，資料存在自己的 Google Drive。",
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "check": "find src -name '*.js' -print0 | xargs -0 -n1 node --check"
+  }
+}
