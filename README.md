@@ -145,10 +145,6 @@ Google 認不得目前的網址。回到「憑證」→ 你的用戶端 ID →�
 ### 按登入沒有反應 / 沒有跳出視窗
 瀏覽器擋住了彈出視窗。請在網址列允許本網站的彈出視窗，再按一次。
 
-### 舊版存成 .txt 的文字訊息怎麼搬進試算表？
-在網址後面加上 `?migrate=texts` 打開（例如 `https://帳號.github.io/TossDrive/?migrate=texts`），登入後會先問一次，確認才開始。
-原本的 .txt 會移到 Google Drive 垃圾桶（30 天內可救回）；超過 40000 字的超長文字維持 .txt。中途失敗不會掉訊息，重新打開同一個網址就會接續。
-
 ### 為什麼隔一小時要按「重新連線」？
 純前端網頁拿到的 Google 憑證只有 1 小時效期，而且 Google 不允許網頁在背景自動續期，一定要使用者點一下。
 - 1 小時內重新整理網頁：不用做任何事。
@@ -188,7 +184,6 @@ TossDrive/
     ├── auth.js         登入（Google Identity Services）、憑證保存與過期
     ├── drive.js        Drive API 共用呼叫、資料夾、垃圾桶
     ├── messages.js     Drive 檔案 ↔ 訊息物件
-    ├── migrate.js      一次性：把舊版 .txt 文字訊息搬進試算表（搬完可刪）
     ├── textdb.js       文字訊息資料庫（Google 試算表）：建立、新增、同步、刪除
     ├── thumbs.js       縮圖下載與快取
     ├── sync.js         首次載入、載入更早訊息、Changes 輪詢

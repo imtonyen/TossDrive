@@ -150,23 +150,13 @@ async function dropSheet(s) {
   return changed;
 }
 
-/**
- * 一次新增多列：rows 每列是 [id, 時間, 裝置 ID, 裝置類型, 裝置名稱, 文字]。回傳寫入的那份試算表。
- * 寫完這一份滿了就接著開下一份（wait = true 時等開好才回傳；一般送出訊息不用等）。
- */
-export async function appendRows(rows, wait = false) {
+/** 新增一則文字訊息，回傳訊息物件。這一份滿了就接著開下一份（不用等開好才回傳） */
+export async function appendText({ id, time, text, device }) {
   if (!state.sheets.length) state.sheets = await createSheet(1);
   const s = active();
-  const res = await sheetsApi(s.id, '/values/A1:append', { ...APPEND, body: { values: rows.map((r) => [...r, '']) } });
-  const rotate = rotateIfFull(s, res).catch((e) => console.warn('開新的文字試算表失敗，下次送出時再試', e));
-  if (wait) await rotate;
-  return s;
-}
-
-/** 新增一則文字訊息，回傳訊息物件 */
-export async function appendText({ id, time, text, device }) {
   const row = [id, time, device.id, device.type, device.name, text];
-  const s = await appendRows([row]);
+  const res = await sheetsApi(s.id, '/values/A1:append', { ...APPEND, body: { values: [[...row, '']] } });
+  rotateIfFull(s, res).catch((e) => console.warn('開新的文字試算表失敗，下次送出時再試', e));
   return rowToMessage(row, s.id);
 }
 

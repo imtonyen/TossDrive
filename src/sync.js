@@ -5,7 +5,6 @@ import { api, findOrCreateFolder } from './drive.js';
 import { state, gate } from './state.js';
 import { fileToMessage, removeMessage, upsertMessage } from './messages.js';
 import { maybeCleanup } from './cleanup.js';
-import { maybeMigrateTexts } from './migrate.js';
 import { handleSheetChange, hasOlderTexts, initSheets, loadOlderTexts } from './textdb.js';
 import { render } from './ui/render.js';
 import { setDot, showExpired } from './ui/status.js';
@@ -52,7 +51,6 @@ export async function bootstrap() {
   setDot('ok', '同步正常');
   scheduleSync(CFG.POLL_INTERVAL_MS);
   maybeCleanup().catch((e) => console.warn('自動清理失敗', e));
-  maybeMigrateTexts().catch((e) => { console.warn('搬移舊文字訊息失敗', e); toast('搬移失敗：' + e.message, 6000); });
 }
 
 /** 往上捲：載入更早的訊息，維持原本看的位置 */
