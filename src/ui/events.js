@@ -23,10 +23,19 @@ function submitText() {
   sendText(text);
 }
 
+const INPUT_MAX_LINES = 3;
+
+/** 輸入框隨內容長高，最高 3 行；超過 3 行才出現捲軸 */
 function autosize() {
   const t = $('text-input');
+  const cs = getComputedStyle(t);
+  // box-sizing 是 border-box，scrollHeight 不含邊框，要自己補上，不然永遠差幾像素而冒出捲軸
+  const extra = parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth);
+  const max = parseFloat(cs.lineHeight) * INPUT_MAX_LINES + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + extra;
   t.style.height = 'auto';
-  t.style.height = Math.min(t.scrollHeight, 160) + 'px';
+  const want = t.scrollHeight + extra;
+  t.style.height = Math.min(want, max) + 'px';
+  t.style.overflowY = want > max + 1 ? 'auto' : 'hidden';
 }
 
 function hasFiles(e) {

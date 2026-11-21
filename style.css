@@ -307,7 +307,7 @@ a { color: var(--accent); }
   font: inherit;
   font-size: 16px;            /* 16px 以上 iPhone 才不會自動放大畫面 */
   line-height: 1.4;
-  max-height: 160px;
+  overflow-y: hidden;         /* 長到 3 行以內都不出現捲軸，超過才由 JS 改成 auto（ui/events.js 的 autosize） */
   outline: none;
 }
 #text-input:focus { border-color: var(--accent); }
