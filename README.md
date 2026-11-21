@@ -163,7 +163,7 @@ Google 認不得目前的網址。回到「憑證」→ 你的用戶端 ID →�
 ```text
 TossDrive/
 ├── index.html          頁面結構（登入畫面、聊天室、大圖檢視）
-├── style.css           樣式（響應式、深色模式、圖示）
+├── style.css           樣式（響應式、固定淺色、圖示）
 ├── config.js           設定（Client ID 等），一般腳本，部署時只改這個
 ├── package.json        專案資訊與常用指令（npm start / npm run check）
 └── src/

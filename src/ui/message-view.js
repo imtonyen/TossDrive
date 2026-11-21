@@ -37,8 +37,21 @@ function fileCard(name, size, iconName) {
       h('div', { class: 'file-size', text: fmtSize(size) })));
 }
 
-function act(iconName, label, onClick, danger) {
-  return h('button', { class: 'act' + (danger ? ' danger' : ''), onclick: onClick }, icon(iconName), label);
+/** 訊息底下的小按鈕。預設只顯示圖示（label 當作滑鼠提示與螢幕閱讀器文字），showLabel 時圖示旁加文字 */
+function act(iconName, label, onClick, danger, showLabel) {
+  return h('button', {
+    class: 'act' + (danger ? ' danger' : '') + (showLabel ? '' : ' icon-only'),
+    title: label,
+    'aria-label': label,
+    onclick: onClick,
+  }, icon(iconName), showLabel ? label : null);
+}
+
+/** 泡泡只放內容；時間、來源裝置和操作圖示放在泡泡下方同一行 */
+function messageColumn(body, meta, actions) {
+  return h('div', { class: 'msg-col' },
+    h('div', { class: 'bubble' }, body),
+    h('div', { class: 'msg-foot' }, meta, h('div', { class: 'actions' }, actions)));
 }
 
 /** 縮圖框的大小：依原圖比例預留版面，避免圖片載入時畫面跳動 */
@@ -87,8 +100,7 @@ export function buildMessage(m, hd) {
   }
   actions.push(act('trash', '刪除', () => hd.onDelete(m), true));
 
-  const bubble = h('div', { class: 'bubble' }, meta, body, h('div', { class: 'actions' }, actions));
-  return { el: h('div', { class: 'msg ' + (mine ? 'mine' : 'theirs') }, bubble) };
+  return { el: h('div', { class: 'msg ' + (mine ? 'mine' : 'theirs') }, messageColumn(body, meta, actions)) };
 }
 
 /* ---------- 上傳中 / 失敗的訊息 ---------- */
@@ -121,8 +133,7 @@ export function buildPending(u, hd) {
   body.push(refs.status);
 
   const actions = u.status === 'failed'
-    ? [act('retry', '重試', () => hd.onRetry(u)), act('x', '移除', () => hd.onRemove(u), true)]
-    : [act('x', '取消', () => hd.onRemove(u), true)];
-  const bubble = h('div', { class: 'bubble' }, meta, body, h('div', { class: 'actions' }, actions));
-  return { el: h('div', { class: 'msg mine pending' }, bubble), refs };
+    ? [act('retry', '重試', () => hd.onRetry(u), false, true), act('x', '移除', () => hd.onRemove(u), true, true)]
+    : [act('x', '取消', () => hd.onRemove(u), true, true)];
+  return { el: h('div', { class: 'msg mine pending' }, messageColumn(body, meta, actions)), refs };
 }
