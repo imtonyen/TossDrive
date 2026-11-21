@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <!-- viewport-fit=cover：讓 iPhone 瀏海/底部橫條區域也能正確留白 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#2f6fed">
+  <title>TossDrive</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📤</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ===================== 登入畫面 ===================== -->
+  <section id="login-view" class="login" hidden>
+    <div class="login-card">
+      <div class="login-logo">📤</div>
+      <h1>TossDrive</h1>
+      <p class="tagline">Toss it here, find it there.</p>
+      <p class="login-desc">
+        用你的 Google 帳號登入。<br>
+        訊息和檔案會存在你自己 Google Drive 的<br>
+        「<b>TossDrive</b>」資料夾，不經過任何其他伺服器。
+      </p>
+      <button id="login-btn" class="btn-primary" disabled>正在載入 Google 登入…</button>
+      <p id="login-error" class="login-error" hidden></p>
+    </div>
+  </section>
+
+  <!-- ===================== 聊天室畫面 ===================== -->
+  <section id="chat-view" class="chat" hidden>
+
+    <!-- 上方標題列 -->
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-name">TossDrive</span>
+        <span class="brand-tag">Toss it here, find it there.</span>
+      </div>
+      <div class="topbar-right">
+        <span id="sync-dot" class="sync-dot" title="同步狀態"></span>
+        <span id="account-email" class="account-email"></span>
+        <button id="device-btn" class="icon-btn" title="切換這台裝置的標示（手機 / 電腦）">📱</button>
+        <a id="drive-link" class="icon-btn" target="_blank" rel="noopener" title="在 Google Drive 開啟 TossDrive 資料夾">📂</a>
+        <button id="logout-btn" class="icon-btn" title="登出這台裝置">⏻</button>
+      </div>
+    </header>
+
+    <!-- 登入過期提示（Google 的登入憑證約 1 小時過期） -->
+    <div id="auth-banner" class="banner" hidden>
+      <span>登入已過期，暫停同步</span>
+      <button id="reauth-btn" class="btn-small">點此重新連線</button>
+    </div>
+
+    <!-- 時間軸（訊息列表） -->
+    <main id="timeline" class="timeline">
+      <button id="load-older" class="load-older" hidden>載入更早的訊息</button>
+      <div id="messages" class="messages"></div>
+      <div id="loading-hint" class="hint">連線到 Google Drive 中…</div>
+      <div id="empty-hint" class="hint" hidden>
+        還沒有任何訊息。<br>打字、選檔案、拍照，或直接把檔案拖進來試試看！
+      </div>
+    </main>
+
+    <!-- 下方輸入列 -->
+    <footer class="composer">
+      <button id="attach-btn" class="icon-btn composer-btn" title="選擇檔案">📎</button>
+      <button id="camera-btn" class="icon-btn composer-btn" title="拍照">📷</button>
+      <textarea id="text-input" rows="1" placeholder="輸入訊息…" autocomplete="off"></textarea>
+      <button id="send-btn" class="btn-primary send-btn">送出</button>
+      <!-- 隱藏的檔案選擇器 -->
+      <input type="file" id="file-input" multiple hidden>
+      <input type="file" id="camera-input" accept="image/*" capture="environment" hidden>
+    </footer>
+
+    <!-- 拖曳檔案時的提示遮罩（電腦） -->
+    <div id="drop-overlay" class="drop-overlay" hidden>
+      <div class="drop-box">📥 放開即可上傳到 TossDrive</div>
+    </div>
+  </section>
+
+  <!-- ===================== 看大圖 ===================== -->
+  <div id="lightbox" class="lightbox" hidden>
+    <img id="lightbox-img" alt="">
+    <div class="lightbox-bar">
+      <span id="lightbox-name" class="lightbox-name"></span>
+      <button id="lightbox-download" class="btn-small">⬇ 下載</button>
+      <button id="lightbox-close" class="btn-small">✕ 關閉</button>
+    </div>
+  </div>
+
+  <!-- 小提示訊息 -->
+  <div id="toast" class="toast" hidden></div>
+
+  <!-- 設定檔要在主程式之前載入 -->
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+  <!-- Google 登入元件（Google Identity Services），載入完成後通知主程式 -->
+  <script src="https://accounts.google.com/gsi/client" async defer onload="TossDrive.onGisLoaded()"></script>
+</body>
+</html>
