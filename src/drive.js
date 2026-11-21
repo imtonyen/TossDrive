@@ -20,11 +20,11 @@ async function httpErrorFrom(res) {
 
 /**
  * 共用的 Drive API 呼叫：自動帶憑證；401 時標記憑證失效並等使用者重新連線後重試。
- * opts.as：json（預設）/ blob / text / none
+ * opts.as：json（預設）/ blob / text / none；opts.base：換成其他 Google API（例如 Sheets）的網址前綴
  */
 export async function api(path, opts = {}) {
-  const { method = 'GET', params, body, as = 'json', signal } = opts;
-  let url = API + path;
+  const { method = 'GET', params, body, as = 'json', signal, base = API } = opts;
+  let url = base + path;
   if (params) {
     const sp = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== null) sp.set(k, String(v));
@@ -44,21 +44,23 @@ export async function api(path, opts = {}) {
   }
 }
 
+/** 用隱藏屬性 td_role 找檔案（最早建立的那個），被搬到別的位置也找得到 */
+export async function findByRole(role, mimeType, parentId) {
+  const q = [
+    `mimeType='${mimeType}'`,
+    'trashed=false',
+    `appProperties has { key='td_role' and value='${role}' }`,
+  ];
+  if (parentId) q.push(`'${parentId}' in parents`);
+  const r = await api('/files', {
+    params: { q: q.join(' and '), fields: 'files(id)', orderBy: 'createdTime', pageSize: 10, spaces: 'drive' },
+  });
+  return r.files.length ? r.files[0].id : null;
+}
+
 /** 找（或建立）專屬資料夾，用隱藏屬性 td_role 辨識，資料夾被搬走也找得到 */
 export async function findOrCreateFolder(role, parentId, name) {
-  const find = async () => {
-    const q = [
-      `mimeType='${FOLDER_MIME}'`,
-      'trashed=false',
-      `appProperties has { key='td_role' and value='${role}' }`,
-    ];
-    if (parentId) q.push(`'${parentId}' in parents`);
-    const r = await api('/files', {
-      params: { q: q.join(' and '), fields: 'files(id)', orderBy: 'createdTime', pageSize: 10, spaces: 'drive' },
-    });
-    return r.files.length ? r.files[0].id : null;
-  };
-  const found = await find();
+  const found = await findByRole(role, FOLDER_MIME, parentId);
   if (found) return found;
   await api('/files', {
     method: 'POST',
@@ -69,7 +71,7 @@ export async function findOrCreateFolder(role, parentId, name) {
     },
   });
   // 兩台裝置同時第一次登入時可能各建了一個，重新查詢取最早建立的那個，大家就會收斂到同一個
-  return find();
+  return findByRole(role, FOLDER_MIME, parentId);
 }
 
 /** 把檔案移到垃圾桶（30 天內可在 Drive 還原） */

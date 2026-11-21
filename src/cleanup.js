@@ -1,7 +1,8 @@
 /** 自動清理：依 RETENTION_DAYS 把過期的訊息和縮圖移到垃圾桶 */
-import { CFG, FOLDER_MIME } from './constants.js';
+import { CFG, FOLDER_MIME, SHEET_MIME } from './constants.js';
 import { api, trashFile } from './drive.js';
 import { state } from './state.js';
+import { expireTexts } from './textdb.js';
 import { limitDownload } from './utils/async.js';
 import { store } from './utils/storage.js';
 
@@ -12,12 +13,13 @@ export async function maybeCleanup() {
   if (Date.now() - Number(store.get('cleanup') || 0) < 86400000) return;
   const cutoff = new Date(Date.now() - days * 86400000).toISOString();
   const q = `('${state.rootId}' in parents or '${state.thumbsId}' in parents) and trashed=false`
-    + ` and createdTime < '${cutoff}' and mimeType != '${FOLDER_MIME}'`;
+    + ` and createdTime < '${cutoff}' and mimeType != '${FOLDER_MIME}' and mimeType != '${SHEET_MIME}'`;  // 不能把文字訊息試算表本身清掉
   let pageToken;
   do {
     const r = await api('/files', { params: { q, pageSize: 100, pageToken, fields: 'nextPageToken,files(id)', spaces: 'drive' } });
     await Promise.all(r.files.map((f) => limitDownload(() => trashFile(f.id))));
     pageToken = r.nextPageToken;
   } while (pageToken);
+  await expireTexts(Date.now() - days * 86400000);
   store.set('cleanup', String(Date.now()));
 }

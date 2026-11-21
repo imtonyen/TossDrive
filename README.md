@@ -21,10 +21,15 @@
 2. 左上角專案選單 →「**新增專案**」，名稱填 `TossDrive`，按「建立」。
 3. 確認上方已切換到剛建立的專案。
 
-### 2. 啟用 Google Drive API
+### 2. 啟用 Google Drive API 和 Google Sheets API
+
+文字訊息存在一份 Google 試算表裡，所以兩個都要啟用。
 
 1. 左側選單 →「API 和服務」→「**程式庫**」。
 2. 搜尋 `Google Drive API` → 點進去 →「**啟用**」。
+3. 回到程式庫，搜尋 `Google Sheets API` → 點進去 →「**啟用**」。
+
+（不需要新增權限範圍：`drive.file` 就能讀寫 TossDrive 自己建立的試算表。）
 
 ### 3. 設定 OAuth 同意畫面
 
@@ -107,6 +112,7 @@ python3 -m http.server 8080
 | `POLL_INTERVAL_MS` | 多久檢查一次新訊息（毫秒） | `3000` |
 | `RETENTION_DAYS` | 訊息保留天數，`0` = 永久。超過的會自動移到垃圾桶（任一台裝置打開網頁時執行，每台每天最多一次） | `0` |
 | `PAGE_SIZE` | 一次載入幾則訊息 | `40` |
+| `TEXT_SHEET_MAX` | 文字訊息試算表每份最多放幾則，滿了自動開下一份。同步只讀有變動的那份，數字越小越省流量 | `2000` |
 
 **關於 `SCOPES`：** 預設的 `drive.file` 只能存取 TossDrive 自己建立的檔案，最安全；代價是你在 Drive 網頁上手動丟進 `TossDrive` 資料夾的檔案，聊天室看不到。
 想要看得到，可改成 `https://www.googleapis.com/auth/drive`（可存取整個 Drive，登入時警告會比較嚴重）。
@@ -133,8 +139,15 @@ Google 認不得目前的網址。回到「憑證」→ 你的用戶端 ID →�
 ### 載入失敗，錯誤訊息提到 `Google Drive API has not been used in project ... or it is disabled`
 回到步驟 2 啟用 Google Drive API，等 1～2 分鐘後重新整理。
 
+### 載入失敗，錯誤訊息提到 `Google Sheets API has not been used in project ... or it is disabled`
+文字訊息存在試算表裡，要在步驟 2 一併啟用 Google Sheets API，等 1～2 分鐘後重新整理。
+
 ### 按登入沒有反應 / 沒有跳出視窗
 瀏覽器擋住了彈出視窗。請在網址列允許本網站的彈出視窗，再按一次。
+
+### 舊版存成 .txt 的文字訊息怎麼搬進試算表？
+在網址後面加上 `?migrate=texts` 打開（例如 `https://帳號.github.io/TossDrive/?migrate=texts`），登入後會先問一次，確認才開始。
+原本的 .txt 會移到 Google Drive 垃圾桶（30 天內可救回）；超過 40000 字的超長文字維持 .txt。中途失敗不會掉訊息，重新打開同一個網址就會接續。
 
 ### 為什麼隔一小時要按「重新連線」？
 純前端網頁拿到的 Google 憑證只有 1 小時效期，而且 Google 不允許網頁在背景自動續期，一定要使用者點一下。
@@ -175,6 +188,8 @@ TossDrive/
     ├── auth.js         登入（Google Identity Services）、憑證保存與過期
     ├── drive.js        Drive API 共用呼叫、資料夾、垃圾桶
     ├── messages.js     Drive 檔案 ↔ 訊息物件
+    ├── migrate.js      一次性：把舊版 .txt 文字訊息搬進試算表（搬完可刪）
+    ├── textdb.js       文字訊息資料庫（Google 試算表）：建立、新增、同步、刪除
     ├── thumbs.js       縮圖下載與快取
     ├── sync.js         首次載入、載入更早訊息、Changes 輪詢
     ├── actions.js      下載、刪除

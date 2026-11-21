@@ -53,6 +53,7 @@ export function resetData() {
   textLoading.clear();
   localFiles.clear();
   state.rootId = state.thumbsId = '';
+  state.sheets = [];
   state.nextPageToken = null;
   state.booted = false;
   gate.reset();

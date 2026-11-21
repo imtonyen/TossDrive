@@ -6,6 +6,7 @@
 import { api } from '../drive.js';
 import { state, messages, uploads, textCache, textLoading } from '../state.js';
 import { getText } from '../messages.js';
+import { hasOlderTexts } from '../textdb.js';
 import { $, h } from '../utils/dom.js';
 import { limitDownload } from '../utils/async.js';
 import { dayKey, dayLabel } from '../utils/format.js';
@@ -95,7 +96,7 @@ export function render({ bottom = false } = {}) {
   while (container.children.length > nodes.length) container.lastChild.remove();
   for (const k of [...els.keys()]) if (!used.has(k)) els.delete(k);
 
-  $('load-older').hidden = !state.nextPageToken;
+  $('load-older').hidden = !(state.nextPageToken || hasOlderTexts());
   $('empty-hint').hidden = !(state.booted && nodes.length === 0);
 
   if (bottom || nearBottom) timeline.scrollTop = timeline.scrollHeight;

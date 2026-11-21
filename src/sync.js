@@ -1,10 +1,12 @@
 /** 同步：首次載入、載入更早訊息、Changes 輪詢、背景暫停、錯誤退避 */
-import { CFG, FILE_FIELDS, FOLDER_MIME } from './constants.js';
+import { CFG, FILE_FIELDS, FOLDER_MIME, SHEET_MIME } from './constants.js';
 import { tokenValid } from './auth.js';
 import { api, findOrCreateFolder } from './drive.js';
 import { state, gate } from './state.js';
 import { fileToMessage, removeMessage, upsertMessage } from './messages.js';
 import { maybeCleanup } from './cleanup.js';
+import { maybeMigrateTexts } from './migrate.js';
+import { handleSheetChange, hasOlderTexts, initSheets, loadOlderTexts } from './textdb.js';
 import { render } from './ui/render.js';
 import { setDot, showExpired } from './ui/status.js';
 import { $, toast } from './utils/dom.js';
@@ -20,7 +22,7 @@ export function stopSync() {
 async function listMessages(pageToken) {
   return api('/files', {
     params: {
-      q: `'${state.rootId}' in parents and trashed=false and mimeType != '${FOLDER_MIME}'`,
+      q: `'${state.rootId}' in parents and trashed=false and mimeType != '${FOLDER_MIME}' and mimeType != '${SHEET_MIME}'`,
       orderBy: 'createdTime desc',
       pageSize: CFG.PAGE_SIZE,
       pageToken,
@@ -41,6 +43,7 @@ export async function bootstrap() {
   sync.pageToken = (await api('/changes/startPageToken', { params: { spaces: 'drive' } })).startPageToken;
   const page = await listMessages();
   for (const f of page.files) upsertMessage(fileToMessage(f));
+  await initSheets();
   state.nextPageToken = page.nextPageToken || null;
   state.booted = true;
   $('loading-hint').hidden = true;
@@ -49,20 +52,25 @@ export async function bootstrap() {
   setDot('ok', '同步正常');
   scheduleSync(CFG.POLL_INTERVAL_MS);
   maybeCleanup().catch((e) => console.warn('自動清理失敗', e));
+  maybeMigrateTexts().catch((e) => { console.warn('搬移舊文字訊息失敗', e); toast('搬移失敗：' + e.message, 6000); });
 }
 
 /** 往上捲：載入更早的訊息，維持原本看的位置 */
 export async function loadOlder() {
-  if (!state.nextPageToken) return;
+  if (!state.nextPageToken && !hasOlderTexts()) return;
   const btn = $('load-older');
   btn.disabled = true;
   try {
     const timeline = $('timeline');
-    const page = await listMessages(state.nextPageToken);
+    // 檔案（一頁一頁）和文字（一份試算表一份試算表）分開往前載入，兩邊都載好才重繪，位置才不會跳
+    const page = state.nextPageToken ? await listMessages(state.nextPageToken) : null;
+    await loadOlderTexts();
     const prevHeight = timeline.scrollHeight;
     const prevTop = timeline.scrollTop;
-    for (const f of page.files) upsertMessage(fileToMessage(f));
-    state.nextPageToken = page.nextPageToken || null;
+    if (page) {
+      for (const f of page.files) upsertMessage(fileToMessage(f));
+      state.nextPageToken = page.nextPageToken || null;
+    }
     render();
     timeline.scrollTop = prevTop + (timeline.scrollHeight - prevHeight);
   } catch (e) {
@@ -102,6 +110,7 @@ async function syncTick() {
 async function pullChanges() {
   let token = sync.pageToken;
   let changed = false;
+  const sheetChanges = new Map();   // 試算表檔案 ID → 最新的變動
   for (;;) {
     const r = await api('/changes', {
       params: {
@@ -115,6 +124,10 @@ async function pullChanges() {
     });
     for (const ch of r.changes || []) {
       const f = ch.file;
+      if ((f && f.mimeType === SHEET_MIME) || state.sheets.some((s) => s.id === ch.fileId)) {
+        sheetChanges.set(ch.fileId, ch);   // 文字訊息試算表有變動：一份只讀一次
+        continue;
+      }
       const inRoot = f && f.parents && f.parents.includes(state.rootId);
       if (ch.removed || !f || f.trashed || !inRoot || f.mimeType === FOLDER_MIME) {
         // 移到垃圾桶、永久刪除、移出資料夾 → 從畫面移除
@@ -127,5 +140,6 @@ async function pullChanges() {
     if (r.nextPageToken) token = r.nextPageToken;
     else { sync.pageToken = r.newStartPageToken; break; }
   }
+  for (const ch of sheetChanges.values()) if (await handleSheetChange(ch)) changed = true;
   if (changed) render();
 }

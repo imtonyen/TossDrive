@@ -3,6 +3,7 @@
 export const state = {
   rootId: '',            // Drive 裡 TossDrive 資料夾的 ID
   thumbsId: '',          // _thumbs（縮圖）資料夾的 ID
+  sheets: [],            // 存放文字訊息的試算表 [{ id, seq, loaded, count }]，由舊到新，最後一份是目前寫入的
   nextPageToken: null,   // 載入更早訊息用
   booted: false,         // 首次載入是否完成
   chatStarted: false,    // 是否已進入聊天室

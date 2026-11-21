@@ -2,11 +2,12 @@
  * 上傳佇列：文字立刻送出，檔案排隊一個一個傳（避免手機網路塞車）。
  * 管理上傳中的訊息（進度、取消、失敗重試），完成後換成 Drive 上的正式訊息。
  */
-import { INLINE_TEXT_MAX, MULTIPART_MAX } from '../constants.js';
+import { INLINE_TEXT_MAX, MULTIPART_MAX, SHEET_TEXT_MAX } from '../constants.js';
 import { trashFile } from '../drive.js';
 import { device } from '../device.js';
 import { state, uploads, textCache, localFiles, gate } from '../state.js';
 import { fileToMessage, upsertMessage } from '../messages.js';
+import { appendText } from '../textdb.js';
 import { setLocalThumb } from '../thumbs.js';
 import { render, scheduleRender, updateProgress } from '../ui/render.js';
 import { stamp } from '../utils/format.js';
@@ -43,7 +44,7 @@ function newItem(props) {
 
 /** 把一則文字訊息放進上傳（文字會立刻送出，不排隊） */
 export function sendText(text) {
-  const item = newItem({ kind: 'text', text, type: 'text' });
+  const item = newItem({ kind: 'text', text, type: 'text', msgId: 'm' + crypto.randomUUID().replaceAll('-', '') });
   uploads.push(item);
   render({ bottom: true });
   runItem(item);
@@ -91,8 +92,8 @@ async function runItem(item) {
   scheduleRender();
   try {
     await gate.promise;   // 資料夾準備好才能上傳
-    const json = item.kind === 'text' ? await uploadText(item) : await uploadFile(item);
-    completeItem(item, json);
+    const m = item.kind === 'text' ? await uploadText(item) : fileToMessage(await uploadFile(item));
+    completeItem(item, m);
   } catch (e) {
     if (item.cancelled || e.aborted) return;   // 使用者取消，畫面上已經移除
     console.warn('上傳失敗', e);
@@ -102,7 +103,16 @@ async function runItem(item) {
   }
 }
 
+/** 文字存進試算表；同一則重試時用同一個 ID，就算前一次其實送出去了，畫面上也不會重複 */
 async function uploadText(item) {
+  if (item.text.length <= SHEET_TEXT_MAX) {
+    return appendText({ id: item.msgId, time: item.createdAt, text: item.text, device });
+  }
+  return fileToMessage(await uploadLongText(item));
+}
+
+/** 超過試算表一格上限的超長文字，退回存成 .txt 檔 */
+async function uploadLongText(item) {
   const text = item.text;
   const inline = text.length <= INLINE_TEXT_MAX;
   const meta = {
@@ -156,8 +166,7 @@ async function uploadFile(item) {
 
 /* ---------- 完成、取消、重試 ---------- */
 
-function completeItem(item, json) {
-  const m = fileToMessage(json);
+function completeItem(item, m) {
   if (item.thumbBlobUrl) {
     if (m.thumbId) setLocalThumb(m.thumbId, item.thumbBlobUrl);
     else URL.revokeObjectURL(item.thumbBlobUrl);

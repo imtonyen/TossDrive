@@ -1,6 +1,7 @@
 /** 對單則訊息的操作：下載、刪除 */
 import { DIRECT_DOWNLOAD_MAX } from './constants.js';
 import { api, trashFile } from './drive.js';
+import { deleteText } from './textdb.js';
 import { localFiles } from './state.js';
 import { removeMessage, upsertMessage } from './messages.js';
 import { render } from './ui/render.js';
@@ -25,11 +26,12 @@ export async function downloadMessage(m) {
 }
 
 export async function deleteMessage(m) {
-  if (!confirm('刪除這則訊息？\n（會移到 Google Drive 垃圾桶，30 天內都救得回來，其他裝置也會同步消失）')) return;
+  if (!confirm('刪除這則訊息？\n（檔案會移到 Google Drive 垃圾桶，30 天內都救得回來，其他裝置也會同步消失）')) return;
   removeMessage(m.id);
   render();
   try {
-    await trashFile(m.id);
+    if (m.sheetId) await deleteText(m);
+    else await trashFile(m.id);
     if (m.thumbId) trashFile(m.thumbId).catch(() => {});
   } catch (e) {
     upsertMessage(m);  // 刪除失敗，放回畫面
