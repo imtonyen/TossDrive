@@ -4,7 +4,7 @@
  * 本模組不碰畫面也不呼叫 Drive：需要通知畫面或載入資料時，透過 configureAuth() 註冊的回呼。
  */
 import { CFG } from './constants.js';
-import { store } from './utils/storage.js';
+import { sessionStore, store } from './utils/storage.js';
 
 export const auth = {
   token: '',
@@ -52,16 +52,21 @@ function armExpiryTimer() {
   expiryTimer = setTimeout(() => { if (!tokenValid() && handlers.onExpired) handlers.onExpired(); }, Math.max(ms, 0));
 }
 
+/**
+ * 憑證存在 sessionStorage：重新整理不用再登入，但關掉分頁或瀏覽器就清掉，
+ * 避免共用電腦上留著可用的憑證。email 只是登入提示，留在 localStorage。
+ */
 export function saveToken() {
-  store.set('token', JSON.stringify({ token: auth.token, expiresAt: auth.expiresAt }));
+  sessionStore.set('token', JSON.stringify({ token: auth.token, expiresAt: auth.expiresAt }));
   if (auth.email) store.set('email', auth.email);
 }
 
-/** 啟動時還原上次的憑證；還有效回傳 true（1 小時內重新整理不用再登入） */
+/** 啟動時還原這個分頁的憑證；還有效回傳 true（1 小時內重新整理不用再登入） */
 export function restoreSavedToken() {
+  store.remove('token');   // 舊版把憑證存在 localStorage，清掉
   auth.email = store.get('email') || '';
   let saved = null;
-  try { saved = JSON.parse(store.get('token') || 'null'); } catch (e) { /* 損毀就當沒有 */ }
+  try { saved = JSON.parse(sessionStore.get('token') || 'null'); } catch (e) { /* 損毀就當沒有 */ }
   if (saved && saved.token && saved.expiresAt - 30000 > Date.now()) {
     auth.token = saved.token;
     auth.expiresAt = saved.expiresAt;
@@ -74,6 +79,7 @@ export function restoreSavedToken() {
 /** 登出：只清除這台裝置的登入狀態，不撤銷授權（不影響其他裝置） */
 export function clearAuth() {
   clearTimeout(expiryTimer);
+  sessionStore.remove('token');
   store.remove('token');
   store.remove('email');
   auth.token = '';
