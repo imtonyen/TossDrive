@@ -17,7 +17,10 @@ export async function downloadMessage(m) {
       return;
     }
     toast('下載中…', 8000);
-    const blob = await api('/files/' + m.id, { params: { alt: 'media' }, as: 'blob' });
+    const blob = await api('/files/' + m.id, {
+      params: { alt: 'media' }, as: 'blob',
+      onProgress: (frac) => { if (frac !== null) toast(`下載中… ${Math.round(frac * 100)}%`, 8000); },
+    });
     saveBlob(blob, m.name);
     hideToast();
   } catch (e) {

@@ -254,8 +254,6 @@ a { color: var(--accent); }
   max-width: 100%;
 }
 .img-box img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.img-box.loading::after,
-.img-box.placeholder::after,
 .img-box.error::after {
   content: attr(data-label);
   position: absolute;
@@ -268,7 +266,18 @@ a { color: var(--accent); }
   font-size: 13px;
   color: var(--muted);
 }
-.img-box.placeholder img, .img-box.error img { visibility: hidden; }
+.img-box.loading img, .img-box.error img { visibility: hidden; }
+.img-box .ring { position: absolute; inset: 0; margin: auto; width: 36px; height: 36px; }
+
+/* 讀取中的藍色旋轉圈（src/ui/progress-ring.js） */
+.ring { display: inline-flex; color: var(--accent); }
+.ring[hidden] { display: none; }
+.ring-svg { width: 100%; height: 100%; animation: ring-spin .9s linear infinite; }
+.ring-track, .ring-bar { fill: none; stroke-width: 3.5; }
+.ring-track { stroke: rgba(127, 127, 127, .25); }
+.ring-bar { stroke: currentColor; stroke-linecap: round; stroke-dasharray: 28 100; }
+@keyframes ring-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ring-svg { animation-duration: 2.4s; } }
 
 /* 一般檔案卡片 */
 .file-card { display: flex; align-items: center; gap: 10px; min-width: 200px; }
@@ -355,6 +364,8 @@ a { color: var(--accent); }
   justify-content: center;
 }
 .lightbox img { max-width: 100%; max-height: calc(100% - 64px); object-fit: contain; }
+.lightbox-ring { position: absolute; inset: 0; margin: auto; width: 40px; height: 40px; color: #fff; }   /* 跟圖片一樣置中；黑底上用白色 */
+.lightbox-ring .ring-track { stroke: rgba(255, 255, 255, .25); }
 .lightbox-bar {
   position: absolute;
   left: 0; right: 0; bottom: 0;

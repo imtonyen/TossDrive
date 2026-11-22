@@ -12,6 +12,7 @@ import { $, h, linkify, copyText } from '../utils/dom.js';
 import { fmtSize, fmtTime } from '../utils/format.js';
 import { fitImageUrl, devicePixels } from '../utils/image.js';
 import { icon, devIconName, fileIcon } from './icons.js';
+import { progressRing } from './progress-ring.js';
 
 /* ---------- 圖片延遲載入：元素快進入畫面時才下載縮圖 ---------- */
 let imgObserver = null;
@@ -63,19 +64,20 @@ function imgBoxStyle(w, h2) {
   return `width:${width}px;aspect-ratio:${w} / ${h2}`;
 }
 
+/** 圖片還沒讀出來前顯示進度圈，圖片真的畫出來（load）後才拿掉 */
 function buildImageBox(m, onOpen) {
   const img = h('img', { alt: m.name, draggable: 'false' });
-  const box = h('div', { class: 'img-box placeholder', 'data-label': '', style: imgBoxStyle(m.w, m.h), onclick: () => onOpen(m) }, img);
+  const ring = progressRing();
+  const box = h('div', { class: 'img-box loading', 'data-label': '', style: imgBoxStyle(m.w, m.h), onclick: () => onOpen(m) }, img, ring);
+  const fail = () => {
+    ring.remove();
+    box.className = 'img-box error';
+    box.dataset.label = '無法載入';
+  };
+  img.addEventListener('load', () => { ring.remove(); box.className = 'img-box'; }, { once: true });
+  img.addEventListener('error', fail, { once: true });
   observeImage(box, () => {
-    box.className = 'img-box loading';
-    box.dataset.label = '載入中…';
-    getThumbUrl(m).then((url) => {
-      img.src = url;
-      box.className = 'img-box';
-    }).catch(() => {
-      box.className = 'img-box error';
-      box.dataset.label = '無法載入';
-    });
+    getThumbUrl(m).then((url) => { img.src = url; }).catch(fail);
   });
   return box;
 }

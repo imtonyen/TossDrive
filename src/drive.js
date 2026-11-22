@@ -18,12 +18,31 @@ async function httpErrorFrom(res) {
   return new HttpError(res.status, `${msg} (${res.status})`);
 }
 
+/** 邊下載邊回報進度（0~1）；伺服器沒給檔案大小時回報 null（不知道進度） */
+async function readBlobWithProgress(res, onProgress) {
+  const total = Number(res.headers.get('Content-Length')) || 0;
+  if (!res.body || !res.body.getReader) { onProgress(null); return res.blob(); }
+  const reader = res.body.getReader();
+  const chunks = [];
+  let loaded = 0;
+  onProgress(total ? 0 : null);
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    loaded += value.length;
+    if (total) onProgress(Math.min(1, loaded / total));
+  }
+  return new Blob(chunks, { type: res.headers.get('Content-Type') || '' });
+}
+
 /**
  * 共用的 Drive API 呼叫：自動帶憑證；401 時標記憑證失效並等使用者重新連線後重試。
  * opts.as：json（預設）/ blob / text / none；opts.base：換成其他 Google API（例如 Sheets）的網址前綴
+ * opts.onProgress：as 為 blob 時，下載過程中回報進度（0~1，不知道總大小時是 null）
  */
 export async function api(path, opts = {}) {
-  const { method = 'GET', params, body, as = 'json', signal, base = API } = opts;
+  const { method = 'GET', params, body, as = 'json', signal, base = API, onProgress } = opts;
   let url = base + path;
   if (params) {
     const sp = new URLSearchParams();
@@ -37,7 +56,7 @@ export async function api(path, opts = {}) {
     const res = await fetch(url, { method, signal, headers, body: body ? JSON.stringify(body) : undefined });
     if (res.status === 401 && attempt < 2) { markInvalid(); continue; }
     if (!res.ok) throw await httpErrorFrom(res);
-    if (as === 'blob') return res.blob();
+    if (as === 'blob') return onProgress ? readBlobWithProgress(res, onProgress) : res.blob();
     if (as === 'text') return res.text();
     if (as === 'none') return null;
     return res.json();
