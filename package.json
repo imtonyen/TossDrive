@@ -1,6 +1,6 @@
 {
   "name": "tossdrive",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "private": true,
   "description": "Toss it here, find it there. 網頁版的「傳給自己的聊天室」，資料存在自己的 Google Drive。",
   "type": "module",
