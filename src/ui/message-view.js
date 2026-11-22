@@ -6,7 +6,7 @@
 import { device } from '../device.js';
 import { tokenValid } from '../auth.js';
 import { getText } from '../messages.js';
-import { IMG_BOX_MAX_W, IMG_BOX_MAX_H, PENDING_PREVIEW_MAX } from '../constants.js';
+import { IMG_BOX_W, IMG_BOX_MAX_H, PENDING_PREVIEW_MAX } from '../constants.js';
 import { getThumbUrl } from '../thumbs.js';
 import { $, h, linkify, copyText } from '../utils/dom.js';
 import { fmtSize, fmtTime } from '../utils/format.js';
@@ -57,11 +57,10 @@ function messageColumn(body, meta, actions) {
     h('div', { class: 'msg-foot' }, meta, h('div', { class: 'actions' }, actions)));
 }
 
-/** 縮圖框的大小：依原圖比例預留版面，避免圖片載入時畫面跳動 */
+/** 縮圖框的大小：寬度固定、高度依原圖比例預留版面（避免圖片載入時畫面跳動），超長的圖到上限就裁切 */
 function imgBoxStyle(w, h2) {
   if (!w || !h2) { w = 4; h2 = 3; }
-  const width = Math.round(Math.min(IMG_BOX_MAX_W, (IMG_BOX_MAX_H * w) / h2));
-  return `width:${width}px;aspect-ratio:${w} / ${h2}`;
+  return `width:${IMG_BOX_W}px;aspect-ratio:${w} / ${h2};max-height:${IMG_BOX_MAX_H}px`;
 }
 
 /**

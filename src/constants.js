@@ -26,8 +26,12 @@ export const INLINE_TEXT_MAX = 1000;                  // （.txt 檔）這個字
 export const MULTIPART_MAX = 5 * 1024 * 1024;         // ≤ 5MB 用 multipart，否則可續傳
 export const CHUNK_SIZE = 8 * 1024 * 1024;            // 可續傳每段大小（必須是 256KB 的倍數）
 export const DIRECT_DOWNLOAD_MAX = 100 * 1024 * 1024; // 超過就改用 Drive 的下載連結
-export const THUMB_MAX_EDGE = 480;                    // 縮圖長邊像素
-export const IMG_BOX_MAX_W = 280;                     // 聊天室裡圖片框最大寬度（CSS 像素）
-export const IMG_BOX_MAX_H = 360;                     // 聊天室裡圖片框最大高度（CSS 像素）
+// 聊天室裡的圖片框（CSS 像素）：寬度固定約手機螢幕的一半，高度跟著圖片比例；
+// 超長的圖（捲動截圖）高度到上限就裁掉上下，一般手機截圖（約 1:2.2）剛好完整顯示
+export const IMG_BOX_W = 220;
+export const IMG_BOX_MAX_H = 480;
+// 縮圖最大寬高（像素）：iPhone 3 倍密度上 220 寬需要 660，720 夠用；高度上限對應圖片框高度上限
+export const THUMB_MAX_W = 720;
+export const THUMB_MAX_H = IMG_BOX_MAX_H * 3;
 export const PENDING_PREVIEW_MAX = 220;               // 上傳中預覽圖最大邊長（CSS 像素，對應 style.css .pending-preview）
 export const MAX_CONCURRENT_DOWNLOADS = 4;
