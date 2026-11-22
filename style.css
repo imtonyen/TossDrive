@@ -266,7 +266,6 @@ a { color: var(--accent); }
   font-size: 13px;
   color: var(--muted);
 }
-.img-box.loading img, .img-box.error img { visibility: hidden; }
 .img-box .ring { position: absolute; inset: 0; margin: auto; width: 36px; height: 36px; }
 
 /* 讀取中的藍色旋轉圈（src/ui/progress-ring.js） */

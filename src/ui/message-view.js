@@ -64,17 +64,20 @@ function imgBoxStyle(w, h2) {
   return `width:${width}px;aspect-ratio:${w} / ${h2}`;
 }
 
-/** 圖片還沒讀出來前顯示進度圈，圖片真的畫出來（load）後才拿掉 */
+/**
+ * 圖片還沒讀出來前顯示進度圈；圖片真的載入完成（load）才放進框裡。
+ * 不靠 CSS 藏圖片：就算瀏覽器還快取著舊版 style.css，也不會露出破圖示和檔名。
+ */
 function buildImageBox(m, onOpen) {
   const img = h('img', { alt: m.name, draggable: 'false' });
   const ring = progressRing();
-  const box = h('div', { class: 'img-box loading', 'data-label': '', style: imgBoxStyle(m.w, m.h), onclick: () => onOpen(m) }, img, ring);
+  const box = h('div', { class: 'img-box loading', 'data-label': '', style: imgBoxStyle(m.w, m.h), onclick: () => onOpen(m) }, ring);
   const fail = () => {
     ring.remove();
     box.className = 'img-box error';
     box.dataset.label = '無法載入';
   };
-  img.addEventListener('load', () => { ring.remove(); box.className = 'img-box'; }, { once: true });
+  img.addEventListener('load', () => { ring.replaceWith(img); box.className = 'img-box'; }, { once: true });
   img.addEventListener('error', fail, { once: true });
   observeImage(box, () => {
     getThumbUrl(m).then((url) => { img.src = url; }).catch(fail);
