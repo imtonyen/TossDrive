@@ -136,7 +136,9 @@ a { color: var(--accent); }
 .brand { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
 .brand-name { font-weight: 700; font-size: 18px; }
 .app-version { color: var(--muted); font-size: 12px; white-space: nowrap; }
-.login-version { margin: 18px 0 0; text-align: center; }
+.login-links { margin: 18px 0 0; font-size: 13px; color: var(--muted); }
+.login-links a { color: var(--muted); }
+.login-version { margin: 4px 0 0; text-align: center; }
 .brand-tag { color: var(--muted); font-size: 13px; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .topbar-right { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
 .account-email { color: var(--muted); font-size: 12px; margin: 0 6px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
