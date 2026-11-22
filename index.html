@@ -5,13 +5,15 @@
   <!-- viewport-fit=cover：讓 iPhone 瀏海/底部橫條區域也能正確留白 -->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <!-- 內容安全政策（CSP）：只允許載入自己的腳本與 Google 登入腳本，即使有人注入腳本也無法執行或把資料送到別的網站 -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' https://accounts.google.com/gsi/style; img-src 'self' data: blob:; connect-src 'self' https://www.googleapis.com https://sheets.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' https://accounts.google.com/gsi/style; img-src 'self' data: blob:; connect-src 'self' https://www.googleapis.com https://sheets.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
   <meta name="theme-color" content="#2f6fed">
   <title>TossDrive</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232f6fed' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><polyline points='17 8 12 3 7 8'/><line x1='12' y1='3' x2='12' y2='15'/></svg>">
   <!-- iPhone「加入主畫面」用的圖示與名稱：iOS 不吃 SVG，要 180×180 的 PNG（原始檔是 icon.svg） -->
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <meta name="apple-mobile-web-app-title" content="TossDrive">
+  <!-- PWA：讓電腦版 Chrome / Edge 可以「安裝」成獨立視窗的 App（圖示 icon-192/512.png 也是從 icon.svg 轉出） -->
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
