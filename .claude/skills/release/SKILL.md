@@ -16,7 +16,7 @@ GitHub Pages 只從長期分支 `release` 上線；`main` 是開發分支。發�
 ```bash
 git switch main                       # 必須在 main
 git status --porcelain                # 必須乾淨；有未 commit 的修改先問使用者
-gh auth switch -u tony-yen-dev        # 這個 repo 一律用 tony-yen-dev（git push 透過 gh 認證）
+gh auth switch -u tony-yen-dev        # 這個 repo 一律用 imtonyen 帳號；gh 本機仍以舊名登記，git push 透過 gh 認證
 git fetch origin --tags
 git rev-list --count main..origin/main      # 必須是 0（遠端有新 commit 就先停下來問）
 git merge-base --is-ancestor origin/release main   # 必須成功：release 只能快轉，不能分岔
@@ -55,7 +55,7 @@ git push origin refs/tags/vX.Y.Z
 
 ```bash
 git rev-parse main origin/main origin/release vX.Y.Z    # 四個要相同
-gh api repos/tony-yen-dev/TossDrive/pages/builds/latest --jq '.status'   # building / built
+gh api repos/imtonyen/TossDrive/pages/builds/latest --jq '.status'   # building / built
 ```
 
 最後用一兩句話回報：新版號、上線了哪些修改、Pages 建置狀態。
