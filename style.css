@@ -297,6 +297,10 @@ a { color: var(--accent); }
   background: var(--surface);
   border-top: 1px solid var(--border);
 }
+/* 打字時鍵盤已經蓋住底部橫條，不需要再留 safe-area 空白（iOS 鍵盤彈出時 inset 仍是 34pt，會多出一大段間隔） */
+@media (pointer: coarse) {
+  .composer:has(#text-input:focus) { padding-bottom: 8px; }
+}
 .composer-btn { font-size: 22px; padding: 8px 6px; }
 #text-input {
   flex: 1;
