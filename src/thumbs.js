@@ -1,8 +1,9 @@
 /** 縮圖：下載、本機快取（object URL）、釋放 */
-import { MULTIPART_MAX } from './constants.js';
+import { MULTIPART_MAX, IMG_BOX_MAX_W, IMG_BOX_MAX_H } from './constants.js';
 import { api } from './drive.js';
 import { thumbPromises } from './state.js';
 import { limitDownload } from './utils/async.js';
+import { fitImageUrl, devicePixels } from './utils/image.js';
 
 /** 取得縮圖的本機 URL（有快取、有同時下載數量限制） */
 export function getThumbUrl(m) {
@@ -14,12 +15,11 @@ export function getThumbUrl(m) {
       try { blob = await api('/files/' + m.thumbId, { params: { alt: 'media' }, as: 'blob' }); }
       catch (e) { if (e.status !== 404) throw e; }
     }
-    // 沒有縮圖（例如手動丟進資料夾的圖片）→ 檔案不大就直接用原圖
-    if (!blob && m.size <= MULTIPART_MAX) {
-      blob = await api('/files/' + m.id, { params: { alt: 'media' }, as: 'blob' });
-    }
-    if (!blob) throw new Error('沒有縮圖');
-    return URL.createObjectURL(blob);
+    if (blob) return URL.createObjectURL(blob);
+    // 沒有縮圖（例如手動丟進資料夾的圖片）→ 檔案不大就下載原圖，依圖片框大小縮小後顯示
+    if (m.size > MULTIPART_MAX) throw new Error('沒有縮圖');
+    blob = await api('/files/' + m.id, { params: { alt: 'media' }, as: 'blob' });
+    return fitImageUrl(blob, devicePixels(IMG_BOX_MAX_W), devicePixels(IMG_BOX_MAX_H));
   });
   p.catch(() => thumbPromises.delete(key));
   thumbPromises.set(key, p);

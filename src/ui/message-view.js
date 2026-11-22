@@ -6,9 +6,11 @@
 import { device } from '../device.js';
 import { tokenValid } from '../auth.js';
 import { getText } from '../messages.js';
+import { IMG_BOX_MAX_W, IMG_BOX_MAX_H, PENDING_PREVIEW_MAX } from '../constants.js';
 import { getThumbUrl } from '../thumbs.js';
 import { $, h, linkify, copyText } from '../utils/dom.js';
 import { fmtSize, fmtTime } from '../utils/format.js';
+import { fitImageUrl, devicePixels } from '../utils/image.js';
 import { icon, devIconName, fileIcon } from './icons.js';
 
 /* ---------- 圖片延遲載入：元素快進入畫面時才下載縮圖 ---------- */
@@ -57,7 +59,7 @@ function messageColumn(body, meta, actions) {
 /** 縮圖框的大小：依原圖比例預留版面，避免圖片載入時畫面跳動 */
 function imgBoxStyle(w, h2) {
   if (!w || !h2) { w = 4; h2 = 3; }
-  const width = Math.round(Math.min(280, (360 * w) / h2));
+  const width = Math.round(Math.min(IMG_BOX_MAX_W, (IMG_BOX_MAX_H * w) / h2));
   return `width:${width}px;aspect-ratio:${w} / ${h2}`;
 }
 
@@ -113,14 +115,29 @@ export function pendingStatusText(u) {
   return u.kind === 'file' ? `上傳中 ${Math.round(u.progress * 100)}%` : '傳送中…';
 }
 
+/** 上傳中的預覽圖：不直接放原圖，縮成預覽框大小（每個上傳項目只做一次，URL 由上傳佇列負責釋放） */
+function pendingPreviewUrl(u) {
+  if (!u.previewPromise) {
+    const max = devicePixels(PENDING_PREVIEW_MAX);
+    u.previewPromise = fitImageUrl(u.file, max, max).then((url) => {
+      if (u.dropped) { URL.revokeObjectURL(url); return ''; }
+      u.previewUrl = url;
+      return url;
+    });
+  }
+  return u.previewPromise;
+}
+
 export function buildPending(u, hd) {
   const refs = {};
   const meta = h('div', { class: 'meta' }, icon(devIconName(device.type)), ` ${device.name} · ${fmtTime(u.createdAt)}`);
   const body = [];
   if (u.kind === 'text') {
     body.push(h('div', { class: 'text' }, linkify(u.text)));
-  } else if (u.previewUrl) {
-    body.push(h('img', { class: 'pending-preview', src: u.previewUrl, alt: '' }));
+  } else if (u.type === 'image') {
+    const img = h('img', { class: 'pending-preview', alt: '' });
+    pendingPreviewUrl(u).then((url) => { img.src = url; });
+    body.push(img);
     body.push(h('div', { class: 'caption', text: `${u.name} · ${fmtSize(u.size)}` }));
   } else {
     body.push(fileCard(u.name, u.size, fileIcon(u.mime, u.name)));

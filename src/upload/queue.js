@@ -34,7 +34,7 @@ function setProgress(item, frac) {
 function newItem(props) {
   return {
     localId: nextLocalId++, status: 'queued', progress: 0, error: '', createdAt: Date.now(),
-    name: '', size: 0, mime: '', previewUrl: '', abort: null, cancelled: false,
+    name: '', size: 0, mime: '', previewUrl: '', previewPromise: null, dropped: false, abort: null, cancelled: false,
     sessionUri: null, offset: 0, thumbId: '', thumbBlobUrl: '', w: 0, h: 0,
     ...props,
   };
@@ -62,7 +62,6 @@ export function enqueueFiles(files) {
     uploads.push(newItem({
       kind: 'file', file: f, name: f.name, size: f.size, mime: f.type || 'application/octet-stream',
       type: isImage ? 'image' : 'file',
-      previewUrl: isImage ? URL.createObjectURL(f) : '',
     }));
   }
   render({ bottom: true });
@@ -181,6 +180,7 @@ function completeItem(item, m) {
 function dropItem(item) {
   const i = uploads.indexOf(item);
   if (i >= 0) uploads.splice(i, 1);
+  item.dropped = true;   // 預覽圖還在產生的話，產生完會自己釋放
   if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
 }
 
@@ -198,6 +198,7 @@ export function removeUpload(item) {
 export function cancelAllUploads() {
   for (const u of [...uploads]) {
     u.cancelled = true;
+    u.dropped = true;
     if (u.abort) u.abort.abort();
     if (u.previewUrl) URL.revokeObjectURL(u.previewUrl);
     if (u.thumbBlobUrl) URL.revokeObjectURL(u.thumbBlobUrl);
