@@ -65,7 +65,10 @@ a { color: var(--accent); }
   border-radius: 8px;
   text-decoration: none;
 }
-.icon-btn:hover { background: var(--surface-2); color: var(--text); }
+/* 只在有滑鼠的裝置顯示 hover：手機點過按鈕後 :hover 會黏著不放（例如刪除按取消後一直反白） */
+@media (hover: hover) {
+  .icon-btn:hover { background: var(--surface-2); color: var(--text); }
+}
 
 /* ---------- 線條圖示（SVG，顏色跟著文字走） ---------- */
 .icon {
@@ -239,10 +242,12 @@ a { color: var(--accent); }
   font-size: 12px;
   color: var(--muted);
 }
-.act:hover { background: rgba(127, 127, 127, .15); color: var(--text); }
 .act.icon-only { padding: 4px 6px; }
 .act.icon-only .icon { width: 16px; height: 16px; }
-.act.danger:hover { color: var(--danger); }
+@media (hover: hover) {
+  .act:hover { background: rgba(127, 127, 127, .15); color: var(--text); }
+  .act.danger:hover { color: var(--danger); }
+}
 
 /* 圖片縮圖 */
 .img-box {
