@@ -6,7 +6,7 @@ import { $, h } from '../utils/dom.js';
 
 /**
  * 被別的網站用 iframe 嵌入時（點擊劫持）：不啟動 App，只顯示「請直接開啟」。
- * 所有畫面在 HTML 裡預設都是 hidden，所以 iframe 擋掉 JS 時也只會是一片空白。
+ * 所有畫面在 HTML 裡預設都是 hidden，所以 iframe 擋掉 JS 時只會看到純文字的首頁說明（#about），沒有任何可按的按鈕。
  */
 export function showFramedNotice() {
   document.body.replaceChildren(
@@ -20,6 +20,7 @@ export function showFramedNotice() {
 export function showView(name) {
   $('login-view').hidden = name !== 'login';
   $('chat-view').hidden = name !== 'chat';
+  $('about').hidden = name === 'chat';
 }
 
 /** 右上角同步狀態燈：ok（綠）/ error（紅）/ idle（灰） */
