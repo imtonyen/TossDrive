@@ -2,10 +2,10 @@
 import { CFG, FILE_FIELDS, FOLDER_MIME, SHEET_MIME } from './constants.js';
 import { tokenValid } from './auth.js';
 import { api, findOrCreateFolder } from './drive.js';
-import { state, gate } from './state.js';
+import { state, gates } from './state.js';
 import { fileToMessage, removeMessage, upsertMessage } from './messages.js';
 import { maybeCleanup } from './cleanup.js';
-import { handleSheetChange, hasOlderTexts, initSheets, loadOlderTexts } from './textdb.js';
+import { handleSheetChange, hasOlderTexts, initSheets, loadOlderTexts, loadSheetList } from './textdb.js';
 import { render } from './ui/render.js';
 import { setDot, showExpired } from './ui/status.js';
 import { $, toast } from './utils/dom.js';
@@ -31,15 +31,22 @@ async function listMessages(pageToken) {
   });
 }
 
-/** 啟動時：建立資料夾 → 記下 Changes 起點 → 載入最新一頁訊息 → 開始輪詢 */
+/**
+ * 啟動時：建立資料夾 → 記下 Changes 起點 → 找文字試算表 → 載入最新一頁訊息 → 開始輪詢。
+ * 資料夾和試算表清單一準備好就讓上傳先走，不用等訊息載完。
+ */
 export async function bootstrap() {
   $('loading-hint').hidden = false;
   state.rootId = await findOrCreateFolder('root', null, CFG.FOLDER_NAME);
   state.thumbsId = await findOrCreateFolder('thumbs', state.rootId, '_thumbs（縮圖）');
   $('drive-link').href = 'https://drive.google.com/drive/folders/' + state.rootId;
+  gates.folders.resolve();
 
-  // 先取 Changes 起點、再列訊息，這樣兩者之間發生的變動不會漏掉
+  // 先取 Changes 起點、再列試算表和訊息，這樣中間發生的變動不會漏掉
   sync.pageToken = (await api('/changes/startPageToken', { params: { spaces: 'drive' } })).startPageToken;
+  await loadSheetList();
+  gates.sheets.resolve();
+
   const page = await listMessages();
   for (const f of page.files) upsertMessage(fileToMessage(f));
   await initSheets();
@@ -47,7 +54,6 @@ export async function bootstrap() {
   state.booted = true;
   $('loading-hint').hidden = true;
   render({ bottom: true });
-  gate.resolve();
   setDot('ok', '同步正常');
   scheduleSync(CFG.POLL_INTERVAL_MS);
   maybeCleanup().catch((e) => console.warn('自動清理失敗', e));

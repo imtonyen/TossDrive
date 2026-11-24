@@ -22,7 +22,10 @@ import { state } from './state.js';
 import { resetData } from './messages.js';
 import { bootstrap, scheduleSync, stopSync } from './sync.js';
 import { downloadMessage, deleteMessage } from './actions.js';
-import { cancelAllUploads, hasUnfinishedUploads, removeUpload, retryUpload } from './upload/queue.js';
+import {
+  cancelAllUploads, hasUnfinishedUploads, removeUpload, restorePendingUploads, retryUpload, setPendingOwner,
+} from './upload/queue.js';
+import { clearPending } from './upload/persist.js';
 import { bindUI } from './ui/events.js';
 import { openLightbox } from './ui/lightbox.js';
 import { configureRender, resetView, scheduleRender } from './ui/render.js';
@@ -39,18 +42,47 @@ function onExpired() {
   scheduleRender();   // 上傳中的訊息要改顯示「登入已過期」
 }
 
-async function onTokenAcquired() {
-  if (!auth.email) {
-    try {
-      const about = await api('/about', { params: { fields: 'user(emailAddress)' } });
-      auth.email = (about.user && about.user.emailAddress) || '';
-      saveToken();
-    } catch (e) { /* 取不到 email 不影響使用 */ }
-  }
+function onTokenAcquired() {
   hideExpired();
   scheduleRender();
   if (!state.chatStarted) enterChat();
   else scheduleSync(0);
+}
+
+function showEmail() {
+  $('account-email').textContent = auth.email;
+  $('account-email').title = auth.email;
+}
+
+/**
+ * 在背景向 Google 確認目前登入的是哪個帳號，不擋住進聊天室。
+ * 記住的 email 只是上次的提示（重新登入時可能換了帳號），補傳前一定要確認，才不會傳錯 Drive。
+ */
+async function verifyEmail() {
+  for (let i = 0; i < 5 && state.chatStarted; i++) {
+    try {
+      const about = await api('/about', { params: { fields: 'user(emailAddress)' } });
+      const email = (about.user && about.user.emailAddress) || '';
+      if (!state.chatStarted || !email) return '';
+      if (auth.email !== email) {
+        auth.email = email;
+        saveToken();
+        showEmail();
+        updateLoginButton();
+      }
+      setPendingOwner(email);
+      return email;
+    } catch (e) {
+      await sleep(3000);
+    }
+  }
+  return '';
+}
+
+/** 上次沒傳完的訊息：知道是哪個帳號後放回佇列（只補傳到同一個帳號） */
+async function resumePending() {
+  const email = await verifyEmail();
+  if (email && state.chatStarted) await restorePendingUploads(email);
 }
 
 function onFailure(code) {
@@ -65,9 +97,9 @@ async function enterChat() {
   if (state.chatStarted) return;
   state.chatStarted = true;
   showView('chat');
-  $('account-email').textContent = auth.email;
-  $('account-email').title = auth.email;
+  showEmail();
   setDot('idle', '連線中…');
+  resumePending().catch((e) => console.warn('補傳上次的訊息失敗', e));
   for (;;) {
     try {
       await bootstrap();
@@ -84,8 +116,9 @@ async function enterChat() {
 }
 
 function logout() {
-  if (hasUnfinishedUploads() && !confirm('還有檔案正在上傳，登出後會中斷。確定要登出嗎？')) return;
+  if (hasUnfinishedUploads() && !confirm('還有訊息還沒傳完，登出後會被丟掉。確定要登出嗎？')) return;
   cancelAllUploads();
+  clearPending();
   stopSync();
   clearAuth();
   resetData();

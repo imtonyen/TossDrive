@@ -16,10 +16,20 @@ export const textLoading = new Set();
 export const thumbPromises = new Map(); // 縮圖 key → Promise<objectURL>
 export const localFiles = new Map();    // 訊息 id → 這台裝置剛上傳的原始 File（下載、看大圖不用重抓）
 
-/** 資料夾準備好之後才能上傳；登出再登入時會重置 */
-export const gate = {
-  promise: null,
-  resolve: null,
-  reset() { this.promise = new Promise((r) => { this.resolve = r; }); },
-};
-gate.reset();
+/** 可以重置的「等某件事準備好」 */
+function makeGate() {
+  return {
+    promise: null,
+    resolve: null,
+    reset() { this.promise = new Promise((r) => { this.resolve = r; }); },
+  };
+}
+
+/**
+ * 上傳前要等的準備工作；登出再登入時會重置。不用等歷史訊息載完就會放行：
+ *   folders：TossDrive 和 _thumbs 資料夾找到了（檔案、超長文字要等這個）
+ *   sheets ：文字試算表清單載好了（一般文字要等這個，不然會以為沒有試算表而多開一份）
+ */
+export const gates = { folders: makeGate(), sheets: makeGate() };
+gates.folders.reset();
+gates.sheets.reset();

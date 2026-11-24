@@ -110,12 +110,13 @@ export function buildMessage(m, hd) {
 }
 
 /* ---------- 上傳中 / 失敗的訊息 ---------- */
-export const pendingSig = (u) => JSON.stringify([u.status, u.error, u.name, !tokenValid()]);
+export const pendingSig = (u) => JSON.stringify([u.status, u.waiting, u.error, u.name, !tokenValid()]);
 
 export function pendingStatusText(u) {
   if (u.status === 'failed') return '失敗：' + (u.error || '未知錯誤');
   if (u.status === 'queued') return '等待上傳…';
   if (!tokenValid()) return '登入已過期，重新連線後會繼續';
+  if (u.waiting) return '傳送中…';   // 還在等 Drive 連上
   return u.kind === 'file' ? `上傳中 ${Math.round(u.progress * 100)}%` : '傳送中…';
 }
 

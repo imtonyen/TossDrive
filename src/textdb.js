@@ -97,11 +97,16 @@ async function syncSheet(s) {
   return changed;
 }
 
-/** 啟動時：找出（或建立）試算表，載入最新一份；訊息太少就多載入前一份 */
-export async function initSheets() {
+/** 啟動時：找出（或建立）試算表清單。好了之後就能送文字，內容由 initSheets 接著載入 */
+export async function loadSheetList() {
   let list = await listSheets();
   if (!list.length) list = await createSheet(1);
-  state.sheets = list;
+  // 重試啟動時保留已載入的狀態（例如剛送出時才開的新一份）
+  state.sheets = list.map((x) => state.sheets.find((y) => y.id === x.id) || { ...x, loaded: false, count: 0 });
+}
+
+/** 啟動時：載入最新一份試算表；訊息太少就多載入前一份 */
+export async function initSheets() {
   await syncSheet(active());
   let n = active().count;
   for (let s = olderUnloaded(); s && n < CFG.PAGE_SIZE; s = olderUnloaded()) {

@@ -134,7 +134,7 @@
 | `messages.js` / `thumbs.js` | Drive 檔案轉成訊息物件、新增或更新、移除；縮圖下載與快取 |
 | `textdb.js` | 文字訊息試算表：尋找或建立、新增一列、讀取同步、刪除（打記號）、依保留天數清理 |
 | `sync.js` | 首次載入、載入更早訊息、Changes 輪詢、背景暫停、錯誤退避 |
-| `upload/` | `queue`（佇列、進度、取消和重試）、`multipart`、`resumable`（分段、查詢進度、重試）、`thumbnail`（縮圖產生）、`xhr` |
+| `upload/` | `queue`（佇列、進度、取消和重試）、`multipart`、`resumable`（分段、查詢進度、重試）、`persist`（未傳完的訊息暫存在 IndexedDB）、`thumbnail`（縮圖產生）、`xhr` |
 | `ui/` | `render`（時間軸重繪、元素重複使用、日期分隔線、捲動位置維持）、`message-view`（文字、圖片、檔案卡片、操作按鈕）、`lightbox`、`events`（送出、選檔、拍照、拖曳、貼上）、`status`、`icons` |
 | `actions.js` | 下載、刪除 |
 | `cleanup.js` | 依 `RETENTION_DAYS` 把過期的訊息和縮圖移到垃圾桶（每台裝置每天最多一次） |

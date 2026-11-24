@@ -10,8 +10,36 @@ import { CHUNK_SIZE, FILE_FIELDS, UPLOAD_API } from '../constants.js';
 import { sleep } from '../utils/async.js';
 import { responseError, xhr, xhrAuthed } from './xhr.js';
 
-export async function resumableUpload(meta, file, mime, item, onProgress) {
+/** onSession()：拿到新的上傳位址時呼叫（存到本機，重新整理後可以接著傳） */
+export async function resumableUpload(meta, file, mime, item, onProgress, onSession) {
   const signal = item.abort.signal;
+
+  // 向 Google 查詢「已經收到多少」。Range 標頭讀不到時，保守地從最後確認的位置接續。
+  const queryOffset = async () => {
+    const res = await xhr({
+      method: 'PUT', url: item.sessionUri, signal,
+      headers: { 'Content-Range': `bytes */${file.size}` },
+    });
+    if (res.status === 200 || res.status === 201) return { done: JSON.parse(res.text) };
+    if (res.status === 308) {
+      const range = res.header('Range');
+      return { offset: range ? parseInt(range.split('-')[1], 10) + 1 : item.offset };
+    }
+    throw responseError(res);
+  };
+
+  // 上次傳到一半（重試或重新整理後）：先問 Google 收到多少；位址過期就重新開始
+  if (item.sessionUri) {
+    try {
+      const q = await queryOffset();
+      if (q.done) return q.done;
+      item.offset = q.offset;
+      onProgress(item.offset / file.size);
+    } catch (e) {
+      if (e.aborted || e.network) throw e;
+      item.sessionUri = null;
+    }
+  }
 
   if (!item.sessionUri) {
     const res = await xhrAuthed({
@@ -28,21 +56,8 @@ export async function resumableUpload(meta, file, mime, item, onProgress) {
     item.sessionUri = res.header('Location');
     if (!item.sessionUri) throw new Error('無法取得上傳位址');
     item.offset = 0;
+    if (onSession) onSession();
   }
-
-  // 向 Google 查詢「已經收到多少」。Range 標頭讀不到時，保守地從最後確認的位置接續。
-  const queryOffset = async () => {
-    const res = await xhr({
-      method: 'PUT', url: item.sessionUri, signal,
-      headers: { 'Content-Range': `bytes */${file.size}` },
-    });
-    if (res.status === 200 || res.status === 201) return { done: JSON.parse(res.text) };
-    if (res.status === 308) {
-      const range = res.header('Range');
-      return { offset: range ? parseInt(range.split('-')[1], 10) + 1 : item.offset };
-    }
-    throw responseError(res);
-  };
 
   let retries = 0;
   while (item.offset < file.size) {

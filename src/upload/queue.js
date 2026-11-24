@@ -1,11 +1,14 @@
 /**
  * 上傳佇列：文字立刻送出，檔案排隊一個一個傳（避免手機網路塞車）。
  * 管理上傳中的訊息（進度、取消、失敗重試），完成後換成 Drive 上的正式訊息。
+ * 進聊天室就能送出：Drive 還沒連上時先顯示「傳送中」，連上後才真的開始傳。
+ * 還沒傳完的訊息同時存在本機（persist.js），關掉頁面下次打開會接著傳。
  */
+import { auth } from '../auth.js';
 import { INLINE_TEXT_MAX, MULTIPART_MAX, SHEET_TEXT_MAX } from '../constants.js';
 import { trashFile } from '../drive.js';
 import { device } from '../device.js';
-import { state, uploads, textCache, localFiles, gate } from '../state.js';
+import { state, uploads, textCache, localFiles, gates } from '../state.js';
 import { fileToMessage, upsertMessage } from '../messages.js';
 import { appendText } from '../textdb.js';
 import { setLocalThumb } from '../thumbs.js';
@@ -14,6 +17,7 @@ import { stamp } from '../utils/format.js';
 import { multipartUpload } from './multipart.js';
 import { resumableUpload } from './resumable.js';
 import { makeThumb } from './thumbnail.js';
+import { assignOwner, deletePending, holdLock, loadPending, savePending } from './persist.js';
 
 let queueRunning = false;
 let nextLocalId = 1;
@@ -33,19 +37,30 @@ function setProgress(item, frac) {
 
 function newItem(props) {
   return {
-    localId: nextLocalId++, status: 'queued', progress: 0, error: '', createdAt: Date.now(),
+    localId: nextLocalId++, pid: crypto.randomUUID(), owner: auth.email, releaseLock: null, waiting: false,
+    status: 'queued', progress: 0, error: '', createdAt: Date.now(),
     name: '', size: 0, mime: '', previewUrl: '', previewPromise: null, dropped: false, abort: null, cancelled: false,
     sessionUri: null, offset: 0, thumbId: '', thumbBlobUrl: '', w: 0, h: 0,
     ...props,
   };
 }
 
-/* ---------- 對外：送出文字、加入檔案 ---------- */
+/** 新送出的訊息：存到本機，並拿著這筆的鎖（別的分頁才不會也來補傳） */
+function track(item) {
+  savePending(item);
+  holdLock(item.pid).then((release) => {
+    if (item.dropped) { if (release) release(); return; }
+    item.releaseLock = release;
+  });
+}
+
+/* ---------- 對外：送出文字、加入檔案、補傳上次沒傳完的 ---------- */
 
 /** 把一則文字訊息放進上傳（文字會立刻送出，不排隊） */
 export function sendText(text) {
   const item = newItem({ kind: 'text', text, type: 'text', msgId: 'm' + crypto.randomUUID().replaceAll('-', '') });
   uploads.push(item);
+  track(item);
   render({ bottom: true });
   runItem(item);
 }
@@ -59,13 +74,42 @@ export function enqueueFiles(files) {
       f = new File([f], `${f.type.startsWith('image/') ? '照片' : '檔案'}_${stamp()}.${ext}`, { type: f.type, lastModified: f.lastModified });
     }
     const isImage = (f.type || '').startsWith('image/');
-    uploads.push(newItem({
+    const item = newItem({
       kind: 'file', file: f, name: f.name, size: f.size, mime: f.type || 'application/octet-stream',
       type: isImage ? 'image' : 'file',
-    }));
+    });
+    uploads.push(item);
+    track(item);
   }
   render({ bottom: true });
   runQueue();
+}
+
+/** 進聊天室、知道是哪個帳號後：把這個帳號上次沒傳完的放回佇列 */
+export async function restorePendingUploads(email) {
+  const records = await loadPending(email);
+  if (!records.length || auth.email !== email) {
+    for (const r of records) r.releaseLock();
+    return;
+  }
+  for (const r of records) {
+    if (uploads.some((u) => u.pid === r.pid)) { r.releaseLock(); continue; }
+    const item = newItem({ ...r, file: r.file || undefined, sessionUri: r.sessionUri || null });
+    uploads.push(item);
+    if (item.kind === 'text') runItem(item);
+  }
+  render({ bottom: true });
+  runQueue();
+}
+
+/** 確認目前帳號後：這次送出的訊息都標成這個帳號（email 還沒查到、或重新登入換了帳號時） */
+export function setPendingOwner(email) {
+  for (const u of uploads) {
+    if (u.owner === email) continue;
+    u.owner = email;
+    savePending(u);
+  }
+  assignOwner(email);
 }
 
 /* ---------- 執行 ---------- */
@@ -90,10 +134,17 @@ async function runItem(item) {
   item.abort = new AbortController();
   scheduleRender();
   try {
-    await gate.promise;   // 資料夾準備好才能上傳
+    // Drive 還沒準備好就先等（畫面顯示「傳送中」）；一般文字等試算表清單，其他等資料夾
+    const gate = item.kind === 'text' && item.text.length <= SHEET_TEXT_MAX ? gates.sheets : gates.folders;
+    item.waiting = true;
+    await gate.promise;
+    item.waiting = false;
+    if (item.cancelled) return;
+    scheduleRender();
     const m = item.kind === 'text' ? await uploadText(item) : fileToMessage(await uploadFile(item));
     completeItem(item, m);
   } catch (e) {
+    item.waiting = false;
     if (item.cancelled || e.aborted) return;   // 使用者取消，畫面上已經移除
     console.warn('上傳失敗', e);
     item.status = 'failed';
@@ -143,6 +194,7 @@ async function uploadFile(item) {
       item.thumbBlobUrl = URL.createObjectURL(t.blob);  // 上傳完成後直接用這個顯示，不用重新下載
       item.w = t.w;
       item.h = t.h;
+      savePending(item);   // 重新整理後不用再傳一次縮圖
     } catch (e) {
       if (e.aborted || e.http || e.network) throw e;
       item.type = 'file';   // 瀏覽器解不開的圖片（例如 HEIC）當一般檔案傳
@@ -160,7 +212,7 @@ async function uploadFile(item) {
   if (file.size <= MULTIPART_MAX) {
     return multipartUpload(meta, file, item.mime, item.abort.signal, onProgress);
   }
-  return resumableUpload(meta, file, item.mime, item, onProgress);
+  return resumableUpload(meta, file, item.mime, item, onProgress, () => savePending(item));
 }
 
 /* ---------- 完成、取消、重試 ---------- */
@@ -181,6 +233,8 @@ function dropItem(item) {
   const i = uploads.indexOf(item);
   if (i >= 0) uploads.splice(i, 1);
   item.dropped = true;   // 預覽圖還在產生的話，產生完會自己釋放
+  deletePending(item.pid);
+  if (item.releaseLock) item.releaseLock();
   if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
 }
 
@@ -194,11 +248,12 @@ export function removeUpload(item) {
   render();
 }
 
-/** 登出時中斷全部上傳 */
+/** 登出時中斷全部上傳（本機暫存由呼叫端用 clearPending 清掉） */
 export function cancelAllUploads() {
   for (const u of [...uploads]) {
     u.cancelled = true;
     u.dropped = true;
+    if (u.releaseLock) u.releaseLock();
     if (u.abort) u.abort.abort();
     if (u.previewUrl) URL.revokeObjectURL(u.previewUrl);
     if (u.thumbBlobUrl) URL.revokeObjectURL(u.thumbBlobUrl);

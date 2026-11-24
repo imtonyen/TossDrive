@@ -1,5 +1,5 @@
 /** 訊息資料：Drive 檔案轉成訊息物件、新增或更新、移除、清空 */
-import { state, messages, uploads, textCache, textLoading, localFiles, gate } from './state.js';
+import { state, messages, uploads, textCache, textLoading, localFiles, gates } from './state.js';
 import { releaseThumb, releaseAllThumbs } from './thumbs.js';
 
 /** Drive 檔案 → 訊息物件 */
@@ -56,5 +56,6 @@ export function resetData() {
   state.sheets = [];
   state.nextPageToken = null;
   state.booted = false;
-  gate.reset();
+  gates.folders.reset();
+  gates.sheets.reset();
 }
