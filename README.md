@@ -7,7 +7,7 @@
 - 每台裝置用自己的 Google 帳號登入，網頁直接讀寫你 Drive 裡的 `TossDrive` 資料夾。
 - 不設密碼：別人拿到網址，登入的也是他自己的 Drive，看不到你的資料。
 
-完整的設計說明請看 [PLAN.md](PLAN.md)。
+完整的設計說明請看 [SPEC.md](SPEC.md)。
 
 ---
 
@@ -153,7 +153,7 @@ Google 認不得目前的網址。回到「憑證」→ 你的用戶端 ID →�
 - 隔天再開：點「以 xxx@gmail.com 繼續」。
 
 只要瀏覽器還登入著 Google，Google 的小視窗會一閃而過，不用再輸入密碼。上傳到一半憑證過期也沒關係，重新連線後會從中斷處接續。
-（想完全免點擊，之後可以升級成加一個 Cloudflare Worker 保存 refresh token，細節見 PLAN.md 第 10 節。）
+（想完全免點擊，之後可以升級成加一個 Cloudflare Worker 保存 refresh token，細節見 [SPEC.md](SPEC.md) 第 9 節。）
 
 ### 登出會怎樣？
 只清除**這台裝置**的登入狀態，不會撤銷授權，不影響其他裝置。要完全撤銷，到 <https://myaccount.google.com/permissions> 移除 TossDrive。
