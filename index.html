@@ -7,9 +7,7 @@
   <!-- 內容安全政策（CSP）：只允許載入自己的腳本與 Google 登入腳本，即使有人注入腳本也無法執行或把資料送到別的網站 -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' https://accounts.google.com/gsi/style; img-src 'self' data: blob:; connect-src 'self' https://www.googleapis.com https://sheets.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
   <meta name="theme-color" content="#2f6fed">
-  <title>TossDrive – send text, photos and files between your own devices via your Google Drive</title>
-  <meta name="description" content="TossDrive is a free web app that works like a chat with yourself: send text, photos and files between your own phone and computer. Everything is stored in a TossDrive folder in your own Google Drive.">
-  <!-- 首頁說明（#about）刻意不加 hidden、不需要 JS：給 Google OAuth 審核與搜尋引擎看 App 用途 -->
+  <title>TossDrive</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232f6fed' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><polyline points='17 8 12 3 7 8'/><line x1='12' y1='3' x2='12' y2='15'/></svg>">
   <!-- iPhone「加入主畫面」用的圖示與名稱：iOS 不吃 SVG，要 180×180 的 PNG（原始檔是 icon.svg） -->
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -36,28 +34,6 @@
       <p class="login-links"><a href="privacy.html">隱私權政策</a> · <a href="terms.html">服務條款</a></p>
       <p class="app-version login-version" hidden></p>
     </div>
-  </section>
-
-  <!-- ===================== 首頁說明（英文，未登入時顯示在登入卡片下方） ===================== -->
-  <section id="about" class="about" lang="en">
-    <h2>About TossDrive</h2>
-    <p><b>TossDrive is a free web app for moving text, photos and files between your own devices.</b> It works like a chat with yourself: type a note or drop a photo or file on your phone, and it shows up on your computer a few seconds later (and the other way round). Open this same page on each device and sign in with the same Google account.</p>
-
-    <h3>How it uses Google APIs</h3>
-    <ul>
-      <li><b>Google Sign-In</b> – to sign you in with your own Google account. There is no separate TossDrive account or password.</li>
-      <li><b>Google Drive API</b> (scope <code>drive.file</code> only) – to create a "TossDrive" folder in your Drive, upload the photos and files you send into it, and list, show, download and delete them. With <code>drive.file</code>, TossDrive can only see files it created itself; it cannot see any other file in your Drive.</li>
-      <li><b>Google Sheets API</b> – your text messages are saved as rows in a spreadsheet that TossDrive creates inside that folder.</li>
-    </ul>
-
-    <h3>What TossDrive does not do</h3>
-    <ul>
-      <li>It has no server. Your data goes only between your browser and Google, and is never collected, sold, shared or used for advertising.</li>
-      <li>It does not use AI of any kind. It does not generate, edit or analyse images, and it is not used to create AI-generated or non-consensual intimate imagery (NCII).</li>
-      <li>It only shows the files you sent yourself, back to you. It does not publish or share anything.</li>
-    </ul>
-
-    <p class="about-links"><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms of Service</a> · <a href="https://github.com/imtonyen/TossDrive">Source code on GitHub</a></p>
   </section>
 
   <!-- ===================== 聊天室畫面 ===================== -->
